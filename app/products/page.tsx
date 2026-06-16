@@ -13,7 +13,7 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   let query = supabase
     .from("products")
-    .select("*, clubs(name, slug, league_id, leagues(name, slug))")
+    .select("*, clubs(name, slug, logo_url, league_id, leagues(name, slug))")
     .order("created_at", { ascending: false });
 
   if (params.league) {

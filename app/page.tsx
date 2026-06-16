@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase-server";
 import ProductCard from "@/components/ProductCard";
 import type { Product, League } from "@/types";
@@ -9,14 +8,14 @@ export default async function Home() {
 
   const { data: featured } = await supabase
     .from("products")
-    .select("*, clubs(name, slug, leagues(name))")
+    .select("*, clubs(name, slug, logo_url, leagues(name))")
     .eq("is_featured", true)
     .order("created_at", { ascending: false })
     .limit(8);
 
   const { data: newArrivals } = await supabase
     .from("products")
-    .select("*, clubs(name, slug, leagues(name))")
+    .select("*, clubs(name, slug, logo_url, leagues(name))")
     .eq("is_new", true)
     .order("created_at", { ascending: false })
     .limit(4);
@@ -63,15 +62,11 @@ export default async function Home() {
               className="bg-[#111] border border-[#1e1e1e] hover:border-green-500/60 rounded-xl p-5 text-center transition group flex flex-col items-center gap-3"
             >
               {l.logo_url ? (
-                <div className="relative w-14 h-14">
-                  <Image
-                    src={l.logo_url}
-                    alt={l.name}
-                    fill
-                    className="object-contain drop-shadow-lg"
-                    unoptimized
-                  />
-                </div>
+                <img
+                  src={l.logo_url}
+                  alt={l.name}
+                  className="w-14 h-14 object-contain drop-shadow-lg"
+                />
               ) : (
                 <div className="w-14 h-14 rounded-full bg-[#1e1e1e] flex items-center justify-center text-2xl">🏆</div>
               )}
