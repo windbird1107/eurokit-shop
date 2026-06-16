@@ -11,9 +11,11 @@ export default function CheckoutPage() {
   const router = useRouter()
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
   const [user, setUser] = useState<any>(null)
+  const [ready, setReady] = useState(false)
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const { items, total, clear } = useCartStore()
+  const { items, total } = useCartStore()
 
   const shipping = total() >= 50000 ? 0 : 3000
   const orderTotal = total() + shipping
@@ -21,30 +23,32 @@ export default function CheckoutPage() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push('/auth/login'); return }
-      setUser(user)
+      if (user) {
+        setUser(user)
+        setEmail(user.email ?? '')
+      }
+      setReady(true)
     })
   }, [])
 
   useEffect(() => {
-    if (!user || items.length === 0) return
-
-    const orderId = `ORDER_${Date.now()}`
-
-    loadPaymentWidget(TOSS_CLIENT_KEY, user.id)
+    if (!ready || items.length === 0) return
+    // 비회원은 ANONYMOUS 키, 로그인 유저는 user.id 사용
+    const customerKey = user ? user.id : 'ANONYMOUS'
+    loadPaymentWidget(TOSS_CLIENT_KEY, customerKey)
       .then((widget) => {
         paymentWidgetRef.current = widget
         widget.renderPaymentMethods('#payment-widget', { value: orderTotal })
         widget.renderAgreement('#agreement-widget')
       })
       .catch(console.error)
-  }, [user, orderTotal])
+  }, [ready, orderTotal])
 
   const handlePay = async () => {
-    if (!paymentWidgetRef.current || !user || !name.trim()) {
-      alert('이름을 입력해주세요.')
-      return
-    }
+    if (!paymentWidgetRef.current) return
+    if (!name.trim()) { alert('이름을 입력해주세요.'); return }
+    if (!email.trim() || !email.includes('@')) { alert('이메일을 올바르게 입력해주세요.'); return }
+
     setLoading(true)
     const orderId = `ORDER_${Date.now()}`
     try {
@@ -54,7 +58,7 @@ export default function CheckoutPage() {
           ? (items[0].products?.name ?? '유니폼')
           : `${items[0].products?.name ?? '유니폼'} 외 ${items.length - 1}건`,
         customerName: name,
-        customerEmail: user.email,
+        customerEmail: email,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
       })
@@ -75,6 +79,16 @@ export default function CheckoutPage() {
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-2xl font-black mb-8">결제하기</h1>
 
+      {!user && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-3 mb-6 flex items-center gap-3">
+          <span className="text-yellow-400 text-lg">👤</span>
+          <p className="text-yellow-300 text-sm">
+            비회원으로 구매하고 있어요.{' '}
+            <a href="/auth/login" className="underline font-bold">로그인</a>하면 주문 내역을 확인할 수 있어요.
+          </p>
+        </div>
+      )}
+
       {/* 구매자 정보 */}
       <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-6 mb-6">
         <h2 className="font-bold mb-4 text-gray-300">구매자 정보</h2>
@@ -91,10 +105,18 @@ export default function CheckoutPage() {
           <div>
             <label className="text-gray-500 text-sm block mb-1">이메일</label>
             <input
-              value={user?.email ?? ''}
-              readOnly
-              className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-lg px-4 py-2.5 text-gray-500 cursor-not-allowed"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              readOnly={!!user}
+              placeholder="example@email.com"
+              className={`w-full border rounded-lg px-4 py-2.5 text-white outline-none transition ${
+                user
+                  ? 'bg-[#0a0a0a] border-[#1e1e1e] text-gray-500 cursor-not-allowed'
+                  : 'bg-[#0d0d0d] border-[#333] focus:border-green-500'
+              }`}
             />
+            {!user && <p className="text-gray-600 text-xs mt-1">주문 확인 이메일을 보내드려요</p>}
           </div>
         </div>
       </div>

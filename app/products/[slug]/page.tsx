@@ -30,29 +30,43 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!product) return
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) { router.push('/auth/login'); return }
     if (!selectedSize) { setToast('사이즈를 선택해주세요'); return }
 
     setLoading(true)
-    const { data: existing } = await supabase
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', user.id).eq('product_id', product.id).eq('size', selectedSize)
-      .single()
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (existing) {
-      await supabase.from('cart_items')
-        .update({ quantity: existing.quantity + qty })
-        .eq('id', existing.id)
-      addItem({ ...existing, quantity: qty, products: product })
+    if (user) {
+      // 로그인 유저: DB + Zustand
+      const { data: existing } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', user.id).eq('product_id', product.id).eq('size', selectedSize)
+        .single()
+
+      if (existing) {
+        await supabase.from('cart_items')
+          .update({ quantity: existing.quantity + qty })
+          .eq('id', existing.id)
+        addItem({ ...existing, quantity: qty, products: product })
+      } else {
+        const { data: item } = await supabase.from('cart_items')
+          .insert({ user_id: user.id, product_id: product.id, size: selectedSize, quantity: qty })
+          .select().single()
+        if (item) addItem({ ...item, products: product })
+      }
     } else {
-      const { data: item } = await supabase.from('cart_items')
-        .insert({ user_id: user.id, product_id: product.id, size: selectedSize, quantity: qty })
-        .select().single()
-      if (item) addItem({ ...item, products: product })
+      // 비회원: Zustand(로컬)만 사용
+      const guestItem = {
+        id: `guest_${product.id}_${selectedSize}`,
+        user_id: '',
+        product_id: product.id,
+        size: selectedSize,
+        quantity: qty,
+        created_at: new Date().toISOString(),
+        products: product,
+      }
+      addItem(guestItem)
     }
 
     setLoading(false)

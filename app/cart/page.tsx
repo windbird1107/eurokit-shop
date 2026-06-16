@@ -14,31 +14,42 @@ export default function CartPage() {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push('/auth/login'); return }
-      const { data } = await supabase
-        .from('cart_items')
-        .select('*, products(id, name, price, original_price, image_url, slug, sizes)')
-        .eq('user_id', user.id)
-      setItems((data ?? []) as CartItem[])
+      if (user) {
+        // 로그인 유저: DB에서 불러와 Zustand에 동기화
+        const { data } = await supabase
+          .from('cart_items')
+          .select('*, products(id, name, price, original_price, image_url, slug, sizes)')
+          .eq('user_id', user.id)
+        setItems((data ?? []) as CartItem[])
+      }
+      // 비회원: Zustand에 이미 로컬 저장된 데이터 사용
       setLoading(false)
     })
   }, [])
 
   const handleQty = async (item: CartItem, delta: number) => {
-    const supabase = createClient()
     const newQty = item.quantity + delta
+    const isGuest = item.id.startsWith('guest_')
     if (newQty <= 0) {
-      await supabase.from('cart_items').delete().eq('id', item.id)
+      if (!isGuest) {
+        const supabase = createClient()
+        await supabase.from('cart_items').delete().eq('id', item.id)
+      }
       removeItem(item.id)
     } else {
-      await supabase.from('cart_items').update({ quantity: newQty }).eq('id', item.id)
+      if (!isGuest) {
+        const supabase = createClient()
+        await supabase.from('cart_items').update({ quantity: newQty }).eq('id', item.id)
+      }
       updateQty(item.id, newQty)
     }
   }
 
   const handleRemove = async (id: string) => {
-    const supabase = createClient()
-    await supabase.from('cart_items').delete().eq('id', id)
+    if (!id.startsWith('guest_')) {
+      const supabase = createClient()
+      await supabase.from('cart_items').delete().eq('id', id)
+    }
     removeItem(id)
   }
 
