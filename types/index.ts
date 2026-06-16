@@ -13,7 +13,7 @@ export interface Club {
   slug: string
   league_id: string | null
   logo_url: string | null
-  leagues?: League
+  leagues?: League | null
 }
 
 export interface Product {

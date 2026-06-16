@@ -39,7 +39,20 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="p-4">
           {product.clubs && (
-            <p className="text-green-400 text-xs font-bold mb-1">{product.clubs.name}</p>
+            <div className="flex items-center gap-2 mb-2">
+              {product.clubs.logo_url && (
+                <div className="relative w-5 h-5 flex-shrink-0">
+                  <Image
+                    src={product.clubs.logo_url}
+                    alt={product.clubs.name}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              )}
+              <p className="text-green-400 text-xs font-bold truncate">{product.clubs.name}</p>
+            </div>
           )}
           <h3 className="text-white text-sm font-semibold leading-snug mb-2 line-clamp-2">{product.name}</h3>
           <div className="flex items-baseline gap-2">

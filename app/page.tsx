@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase-server";
 import ProductCard from "@/components/ProductCard";
-import type { Product } from "@/types";
+import type { Product, League } from "@/types";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,13 +21,10 @@ export default async function Home() {
     .order("created_at", { ascending: false })
     .limit(4);
 
-  const leagues = [
-    { name: "Premier League", slug: "premier-league", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", color: "from-purple-900 to-blue-900" },
-    { name: "La Liga", slug: "la-liga", flag: "🇪🇸", color: "from-red-900 to-yellow-800" },
-    { name: "Bundesliga", slug: "bundesliga", flag: "🇩🇪", color: "from-red-900 to-black" },
-    { name: "Serie A", slug: "serie-a", flag: "🇮🇹", color: "from-blue-900 to-green-900" },
-    { name: "Ligue 1", slug: "ligue-1", flag: "🇫🇷", color: "from-blue-900 to-red-800" },
-  ];
+  const { data: leagues } = await supabase
+    .from("leagues")
+    .select("*")
+    .order("display_order");
 
   return (
     <div>
@@ -58,14 +56,27 @@ export default async function Home() {
       <section className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-lg font-black text-gray-300 mb-5 tracking-wider uppercase">리그별 보기</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {leagues.map((l) => (
+          {(leagues as League[])?.map((l) => (
             <Link
               key={l.slug}
               href={`/products?league=${l.slug}`}
-              className={`bg-gradient-to-br ${l.color} border border-[#2a2a2a] hover:border-green-500/50 rounded-xl p-5 text-center transition group`}
+              className="bg-[#111] border border-[#1e1e1e] hover:border-green-500/60 rounded-xl p-5 text-center transition group flex flex-col items-center gap-3"
             >
-              <div className="text-3xl mb-2">{l.flag}</div>
-              <p className="text-white text-xs font-bold group-hover:text-green-400 transition">{l.name}</p>
+              {l.logo_url ? (
+                <div className="relative w-14 h-14">
+                  <Image
+                    src={l.logo_url}
+                    alt={l.name}
+                    fill
+                    className="object-contain drop-shadow-lg"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-[#1e1e1e] flex items-center justify-center text-2xl">🏆</div>
+              )}
+              <p className="text-white text-xs font-bold group-hover:text-green-400 transition leading-tight">{l.name}</p>
+              <p className="text-gray-600 text-xs">{l.country}</p>
             </Link>
           ))}
         </div>
