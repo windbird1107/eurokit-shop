@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk'
+import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
 import { createClient } from '@/lib/supabase'
 import { useCartStore } from '@/store/cart'
 
@@ -9,7 +9,7 @@ const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
+  const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
   const [user, setUser] = useState<any>(null)
   const [ready, setReady] = useState(false)
   const [name, setName] = useState('')
@@ -33,26 +33,33 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!ready || items.length === 0) return
-    // 비회원은 ANONYMOUS 키, 로그인 유저는 user.id 사용
-    const customerKey = user ? user.id : 'ANONYMOUS'
-    loadPaymentWidget(TOSS_CLIENT_KEY, customerKey)
-      .then((widget) => {
-        paymentWidgetRef.current = widget
-        widget.renderPaymentMethods('#payment-widget', { value: orderTotal })
-        widget.renderAgreement('#agreement-widget')
-      })
-      .catch(console.error)
+
+    // 비회원은 랜덤 키, 로그인 유저는 user.id 사용 (특수문자 포함 필수)
+    const customerKey = user
+      ? user.id
+      : `GUEST-${Date.now()}`
+
+    loadTossPayments(TOSS_CLIENT_KEY).then(async (tossPayments) => {
+      const widgets = tossPayments.widgets({ customerKey })
+      widgetsRef.current = widgets
+
+      // v2: amount를 먼저 설정
+      await widgets.setAmount({ value: orderTotal, currency: 'KRW' })
+      await widgets.renderPaymentMethods({ selector: '#payment-widget' })
+      await widgets.renderAgreement({ selector: '#agreement-widget' })
+    }).catch(console.error)
   }, [ready, orderTotal])
 
   const handlePay = async () => {
-    if (!paymentWidgetRef.current) return
+    if (!widgetsRef.current) return
     if (!name.trim()) { alert('이름을 입력해주세요.'); return }
     if (!email.trim() || !email.includes('@')) { alert('이메일을 올바르게 입력해주세요.'); return }
 
     setLoading(true)
-    const orderId = `ORDER_${Date.now()}`
+    const orderId = `ORDER-${Date.now()}`
     try {
-      await paymentWidgetRef.current.requestPayment({
+      // v2: requestPayment에 amount 없음 (setAmount로 이미 설정)
+      await widgetsRef.current.requestPayment({
         orderId,
         orderName: items.length === 1
           ? (items[0].products?.name ?? '유니폼')
