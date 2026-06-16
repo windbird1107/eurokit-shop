@@ -102,7 +102,7 @@ export default function ProductDetailPage() {
         {/* 이미지 */}
         <div className="relative aspect-square bg-[#111] rounded-2xl overflow-hidden border border-[#1e1e1e]">
           {product.image_url ? (
-            <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+            <Image src={product.image_url} alt={product.name} fill className="object-contain p-8" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-8xl">👕</div>
           )}
