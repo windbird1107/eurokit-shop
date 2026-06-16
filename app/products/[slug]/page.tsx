@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useCartStore } from '@/store/cart'
+import TeamBadge from '@/components/TeamBadge'
 import type { Product } from '@/types'
 
 export default function ProductDetailPage() {
@@ -114,9 +115,12 @@ export default function ProductDetailPage() {
         {/* 정보 */}
         <div className="flex flex-col gap-6">
           {product.clubs && (
-            <div>
-              <p className="text-green-400 font-bold text-sm">{(product.clubs as any).leagues?.name}</p>
-              <p className="text-gray-300 text-xl font-black">{product.clubs.name}</p>
+            <div className="flex items-center gap-3">
+              <TeamBadge name={product.clubs.name} size="md" />
+              <div>
+                <p className="text-green-400 font-bold text-sm">{(product.clubs as any).leagues?.name}</p>
+                <p className="text-gray-300 text-lg font-black">{product.clubs.name}</p>
+              </div>
             </div>
           )}
           <h1 className="text-2xl font-black leading-tight">{product.name}</h1>

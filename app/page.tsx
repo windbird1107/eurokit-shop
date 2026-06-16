@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import ProductCard from "@/components/ProductCard";
+import TeamBadge from "@/components/TeamBadge";
 import type { Product, League } from "@/types";
 
 export default async function Home() {
@@ -61,15 +62,7 @@ export default async function Home() {
               href={`/products?league=${l.slug}`}
               className="bg-[#111] border border-[#1e1e1e] hover:border-green-500/60 rounded-xl p-5 text-center transition group flex flex-col items-center gap-3"
             >
-              {l.logo_url ? (
-                <img
-                  src={l.logo_url}
-                  alt={l.name}
-                  className="w-14 h-14 object-contain drop-shadow-lg"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-[#1e1e1e] flex items-center justify-center text-2xl">🏆</div>
-              )}
+              <TeamBadge name={l.name} size="lg" />
               <p className="text-white text-xs font-bold group-hover:text-green-400 transition leading-tight">{l.name}</p>
               <p className="text-gray-600 text-xs">{l.country}</p>
             </Link>

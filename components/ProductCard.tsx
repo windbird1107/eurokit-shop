@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import TeamBadge from '@/components/TeamBadge'
 import type { Product } from '@/types'
 
 
@@ -41,13 +42,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="p-4">
           {product.clubs && (
             <div className="flex items-center gap-2 mb-2">
-              {product.clubs.logo_url && (
-                <img
-                  src={product.clubs.logo_url}
-                  alt={product.clubs.name}
-                  className="w-5 h-5 object-contain flex-shrink-0"
-                />
-              )}
+              <TeamBadge name={product.clubs.name} size="sm" />
               <p className="text-green-400 text-xs font-bold truncate">{product.clubs.name}</p>
             </div>
           )}
